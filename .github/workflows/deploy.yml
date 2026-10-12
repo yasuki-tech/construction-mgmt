@@ -1,0 +1,51 @@
+# .github/workflows/deploy.yml
+name: Deploy to AWS
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  # ─── Job 1: Terraform でインフラを管理 ───
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: terraform -chdir=terraform init
+        env:
+          AWS_ACCESS_KEY_ID:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Terraform Plan
+        run: terraform -chdir=terraform plan -out=tfplan
+        env:
+          AWS_ACCESS_KEY_ID:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Terraform Apply
+        run: terraform -chdir=terraform apply -auto-approve tfplan
+        env:
+          AWS_ACCESS_KEY_ID:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+  # ─── Job 2: アプリをEC2にデプロイ ───
+  deploy:
+    needs: terraform  # Terraform完了後に実行
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy app via rsync
+        uses: burnett01/rsync-deployments@6.0.0
+        with:
+          switches: -avz --delete
+          path:     app/
+          remote_path: /var/www/html/construction-mgmt/app/
+          remote_host: ${{ secrets.EC2_HOST }}
+          remote_user: ec2-user
+          remote_key:  ${{ secrets.EC2_SSH_KEY }}
