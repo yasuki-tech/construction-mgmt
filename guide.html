@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>工事管理システム 構築ガイド</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0d12;--bg2:#13131a;--bg3:#1a1a24;--border:#252535;
+  --accent:#6c63ff;--accent2:#48d1cc;--accent3:#f59e0b;
+  --text:#e2e2f0;--muted:#7070a0;--code-bg:#0a0a10;
+  --r:10px;--mono:'JetBrains Mono',monospace
+}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.75;display:flex}
+
+/* SIDEBAR */
+.sidebar{
+  width:260px;min-height:100vh;position:sticky;top:0;height:100vh;overflow-y:auto;
+  background:var(--bg2);border-right:1px solid var(--border);padding:1.5rem 1rem;flex-shrink:0
+}
+.sidebar-logo{font-size:1rem;font-weight:700;color:var(--accent);margin-bottom:2rem;padding:.5rem}
+.nav-group{margin-bottom:1.5rem}
+.nav-label{font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);padding:0 .5rem;margin-bottom:.5rem}
+.nav-item a{
+  display:block;padding:.4rem .75rem;border-radius:6px;font-size:.85rem;color:var(--muted);
+  text-decoration:none;transition:all .2s
+}
+.nav-item a:hover{background:var(--bg3);color:var(--text)}
+
+/* MAIN */
+.main{flex:1;max-width:900px;padding:3rem 3rem 6rem}
+
+/* HERO */
+.hero{
+  margin-bottom:4rem;padding:2.5rem;
+  background:linear-gradient(135deg,#1a1535 0%,#0d1a2e 100%);
+  border:1px solid var(--border);border-radius:var(--r)
+}
+.hero-badges{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem}
+.badge{
+  font-size:.75rem;padding:.25rem .7rem;border-radius:20px;font-weight:600;
+  background:rgba(108,99,255,.15);border:1px solid rgba(108,99,255,.3);color:#a89cff
+}
+.badge.green{background:rgba(72,209,204,.12);border-color:rgba(72,209,204,.3);color:#48d1cc}
+.badge.yellow{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.3);color:#f59e0b}
+.hero h1{font-size:2rem;font-weight:700;margin-bottom:.75rem;line-height:1.2}
+.hero p{color:var(--muted);max-width:600px}
+
+/* SECTIONS */
+.section{margin-bottom:4rem}
+h2{
+  font-size:1.5rem;font-weight:700;margin-bottom:1.5rem;padding-bottom:.75rem;
+  border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.75rem
+}
+h2 .num{
+  background:var(--accent);color:#fff;border-radius:6px;
+  width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;
+  font-size:.8rem;font-weight:700;flex-shrink:0
+}
+h3{font-size:1.1rem;font-weight:600;margin:2rem 0 .75rem;color:var(--accent2)}
+
+/* ARCH DIAGRAM */
+.arch{
+  background:var(--code-bg);border:1px solid var(--border);border-radius:var(--r);
+  padding:2rem;font-family:var(--mono);font-size:.82rem;line-height:1.9;overflow-x:auto;
+  color:#c8c8e0
+}
+.arch .c1{color:#6c63ff}.arch .c2{color:#48d1cc}.arch .c3{color:#f59e0b}.arch .c4{color:#f87171}
+
+/* CODE BLOCKS */
+pre{
+  background:var(--code-bg);border:1px solid var(--border);border-radius:var(--r);
+  padding:1.25rem 1.5rem;overflow-x:auto;margin:1rem 0;position:relative
+}
+code{font-family:var(--mono);font-size:.82rem;color:#c8e6ff}
+.code-label{
+  position:absolute;top:.5rem;right:.75rem;font-size:.7rem;color:var(--muted);
+  font-family:var(--mono)
+}
+.kw{color:#c792ea}.str{color:#c3e88d}.cmt{color:#546e7a;font-style:italic}
+.fn{color:#82aaff}.var{color:#eeffff}.num2{color:#f78c6c}.prop{color:#ffcb6b}
+
+/* CARDS */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin:1rem 0}
+.card{
+  background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);
+  padding:1.25rem;transition:border-color .2s
+}
+.card:hover{border-color:var(--accent)}
+.card-icon{font-size:1.5rem;margin-bottom:.5rem}
+.card h4{font-size:.95rem;font-weight:600;margin-bottom:.4rem}
+.card p{font-size:.83rem;color:var(--muted)}
+
+/* STEPS */
+.steps{counter-reset:step;display:flex;flex-direction:column;gap:1rem;margin:1rem 0}
+.step{display:flex;gap:1rem;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:1.25rem}
+.step::before{
+  counter-increment:step;content:counter(step);
+  background:var(--accent);color:#fff;border-radius:50%;
+  width:28px;height:28px;display:flex;align-items:center;justify-content:center;
+  font-size:.8rem;font-weight:700;flex-shrink:0
+}
+.step-body h4{font-weight:600;margin-bottom:.25rem}
+.step-body p{font-size:.88rem;color:var(--muted)}
+
+/* TABLE */
+table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:.88rem}
+th{background:var(--bg3);padding:.6rem 1rem;text-align:left;border-bottom:2px solid var(--border);color:var(--accent2)}
+td{padding:.6rem 1rem;border-bottom:1px solid var(--border);color:var(--muted)}
+tr:hover td{background:var(--bg3)}
+
+/* CALLOUT */
+.callout{
+  border-left:3px solid var(--accent);background:rgba(108,99,255,.08);
+  border-radius:0 var(--r) var(--r) 0;padding:1rem 1.25rem;margin:1rem 0;font-size:.9rem
+}
+.callout.warn{border-color:var(--accent3);background:rgba(245,158,11,.08)}
+.callout.tip{border-color:var(--accent2);background:rgba(72,209,204,.08)}
+
+/* FLOW */
+.flow{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin:1rem 0}
+.flow-box{
+  background:var(--bg3);border:1px solid var(--border);border-radius:8px;
+  padding:.5rem 1rem;font-size:.85rem;text-align:center
+}
+.flow-arrow{color:var(--muted);font-size:1.2rem}
+
+@media(max-width:768px){
+  .sidebar{display:none}
+  .main{padding:1.5rem}
+}
+</style>
+</head>
+<body>
+
+<nav class="sidebar">
+  <div class="sidebar-logo">⚙ 工事管理システム</div>
+  <div class="nav-group">
+    <div class="nav-label">はじめに</div>
+    <div class="nav-item"><a href="#overview">全体アーキテクチャ</a></div>
+    <div class="nav-item"><a href="#stack">技術スタック</a></div>
+    <div class="nav-item"><a href="#mcp">MCPの活用</a></div>
+  </div>
+  <div class="nav-group">
+    <div class="nav-label">設計</div>
+    <div class="nav-item"><a href="#requirements">要件定義MD</a></div>
+    <div class="nav-item"><a href="#structure">ディレクトリ構成</a></div>
+  </div>
+  <div class="nav-group">
+    <div class="nav-label">インフラ</div>
+    <div class="nav-item"><a href="#terraform">Terraform</a></div>
+    <div class="nav-item"><a href="#apache">Apache設定</a></div>
+  </div>
+  <div class="nav-group">
+    <div class="nav-label">自動化</div>
+    <div class="nav-item"><a href="#cicd">CI/CD (GitHub Actions)</a></div>
+    <div class="nav-item"><a href="#automation">保守の自動化</a></div>
+  </div>
+  <div class="nav-group">
+    <div class="nav-label">アプリ</div>
+    <div class="nav-item"><a href="#app">工事管理システム</a></div>
+    <div class="nav-item"><a href="#nextsteps">次のステップ</a></div>
+  </div>
+</nav>
+
+<main class="main">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-badges">
+      <span class="badge">MCP</span>
+      <span class="badge">Apache</span>
+      <span class="badge green">Terraform</span>
+      <span class="badge green">CI/CD</span>
+      <span class="badge yellow">GitHub Actions</span>
+      <span class="badge yellow">AWS EC2</span>
+    </div>
+    <h1>工事管理システム<br>構築ガイド</h1>
+    <p>MCP・Terraform・GitHub Actions を組み合わせ、Apache上で動く工事管理システムを<strong>ゼロから自動構築・自動保守</strong>するための完全ガイドです。</p>
+  </div>
+
+  <!-- 1. ARCHITECTURE -->
+  <section class="section" id="overview">
+    <h2><span class="num">1</span>全体アーキテクチャ</h2>
+    <p>システム全体は「コードを書いてpushするだけで本番環境まで自動反映される」フローで動きます。</p>
+
+    <div class="arch" style="margin-top:1.5rem">
+<span class="c1">  ┌──────────────────────────────────────────────────────────────┐</span>
+<span class="c1">  │                       開発フロー                              │</span>
+<span class="c1">  └──────────────────────────────────────────────────────────────┘</span>
+
+  <span class="c2">┌─────────────┐</span>   git push   <span class="c2">┌──────────────────┐</span>
+  <span class="c2">│ 開発者      │─────────────▶│  GitHub          │</span>
+  <span class="c2">│ (+ Claude)  │</span>   MCP連携    <span class="c2">│  リポジトリ       │</span>
+  <span class="c2">└─────────────┘</span>             <span class="c2">└────────┬─────────┘</span>
+                                       │ webhook
+                                       ▼
+                              <span class="c3">┌──────────────────┐</span>
+                              <span class="c3">│  GitHub Actions  │</span>
+                              <span class="c3">│  (CI/CD Pipeline)│</span>
+                              <span class="c3">└──┬───────────┬───┘</span>
+                                 │           │
+                     ┌───────────▼──┐  ┌─────▼────────┐
+                     <span class="c4">│  Terraform   │  │  Deploy App  │</span>
+                     <span class="c4">│  Plan/Apply  │  │  to EC2      │</span>
+                     <span class="c4">└──────┬───────┘  └─────┬────────┘</span>
+                            │               │
+                            └───────┬───────┘
+                                    ▼
+                    <span class="c1">┌───────────────────────────────┐</span>
+                    <span class="c1">│            AWS                 │</span>
+                    <span class="c1">│  ┌─────────────────────────┐   │</span>
+                    <span class="c1">│  │  EC2 (t3.micro)          │   │</span>
+                    <span class="c1">│  │  ┌──────────────────┐    │   │</span>
+                    <span class="c1">│  │  │  Apache + PHP 8   │    │   │</span>
+                    <span class="c1">│  │  │  工事管理システム  │    │   │</span>
+                    <span class="c1">│  │  └──────────────────┘    │   │</span>
+                    <span class="c1">│  └─────────────────────────┘   │</span>
+                    <span class="c1">│  VPC / Subnet / Security Group  │</span>
+                    <span class="c1">└───────────────────────────────┘</span>
+    </div>
+  </section>
+
+  <!-- 2. STACK -->
+  <section class="section" id="stack">
+    <h2><span class="num">2</span>技術スタック</h2>
+    <div class="cards">
+      <div class="card">
+        <div class="card-icon">🤖</div>
+        <h4>MCP (GitHub)</h4>
+        <p>Claude Codeからリポジトリ操作・ファイル生成・PR管理を自動化</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🏗</div>
+        <h4>Terraform</h4>
+        <p>AWSインフラをコードで定義。VPC・EC2・Security Groupを再現可能な状態で管理</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">⚡</div>
+        <h4>GitHub Actions</h4>
+        <p>push → test → terraform apply → deploy の全自動パイプライン</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🌐</div>
+        <h4>Apache + PHP 8</h4>
+        <p>Webサーバ。PHPで動くMVCアプリケーションをホスト</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">☁</div>
+        <h4>AWS EC2</h4>
+        <p>t3.micro (Free Tier対応)。Amazon Linux 2023上でApacheを稼働</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🗄</div>
+        <h4>MySQL (RDS / ローカル)</h4>
+        <p>工事・作業員・日報データの永続化</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. MCP -->
+  <section class="section" id="mcp">
+    <h2><span class="num">3</span>MCPの活用</h2>
+    <p>MCP（Model Context Protocol）はClaude Codeが外部サービスを直接操作するためのプロトコルです。本プロジェクトでは <strong>GitHub MCP</strong> を中心に活用します。</p>
+
+    <h3>GitHub MCP でできること</h3>
+    <table>
+      <tr><th>操作</th><th>MCPツール</th><th>活用場面</th></tr>
+      <tr><td>リポジトリ作成</td><td>create_repository</td><td>プロジェクト初期化</td></tr>
+      <tr><td>ファイル作成・更新</td><td>create_or_update_file</td><td>コード生成・修正</td></tr>
+      <tr><td>複数ファイルpush</td><td>push_files</td><td>バッチデプロイ</td></tr>
+      <tr><td>PR作成</td><td>create_pull_request</td><td>コードレビューフロー</td></tr>
+      <tr><td>Issue管理</td><td>create_issue / update_issue</td><td>バグ・タスク追跡</td></tr>
+      <tr><td>コード検索</td><td>search_code</td><td>既存実装の調査</td></tr>
+    </table>
+
+    <div class="callout tip">
+      💡 <strong>ポイント:</strong> 「Claude Codeに指示する → MCPがGitHubを操作 → GitHub ActionsがAWSへ自動デプロイ」という流れで、コードを手で書く作業が大幅に削減されます。
+    </div>
+
+    <h3>将来的に追加できるMCPサーバ</h3>
+    <div class="cards">
+      <div class="card"><div class="card-icon">🔔</div><h4>Slack MCP</h4><p>デプロイ完了・アラートをSlackに自動通知</p></div>
+      <div class="card"><div class="card-icon">☁</div><h4>AWS MCP</h4><p>EC2/RDSの状態確認・操作をClaude Codeから直接実行</p></div>
+      <div class="card"><div class="card-icon">📊</div><h4>Datadog MCP</h4><p>監視・ログ分析をClaude Codeのコンテキストで実施</p></div>
+    </div>
+  </section>
+
+  <!-- 4. REQUIREMENTS -->
+  <section class="section" id="requirements">
+    <h2><span class="num">4</span>要件定義MDの書き方</h2>
+    <p>要件定義をMarkdownで書いておくと、Claude Codeが仕様を理解しやすくなり、コード生成の精度が上がります。<code>requirements/requirements.md</code> に以下の構成で書きます。</p>
+
+    <pre><code><span class="cmt"># 工事管理システム 要件定義</span>
+
+<span class="cmt">## 1. 目的・背景</span>
+<span class="str">- 紙ベースの工事台帳をデジタル化する</span>
+<span class="str">- 現場・事務所どちらからでもアクセス可能にする</span>
+
+<span class="cmt">## 2. ユーザー・権限</span>
+<span class="str">| ロール     | できること                              |</span>
+<span class="str">|-----------|----------------------------------------|</span>
+<span class="str">| 管理者    | 全操作・ユーザー管理                     |</span>
+<span class="str">| 現場監督  | 工事・日報の登録・編集                   |</span>
+<span class="str">| 作業員    | 日報の参照のみ                           |</span>
+
+<span class="cmt">## 3. 機能要件</span>
+<span class="str">### 3.1 工事管理</span>
+<span class="str">- [ ] 工事一覧表示（検索・絞り込み付き）</span>
+<span class="str">- [ ] 工事詳細登録（案件名・場所・工期・担当者）</span>
+<span class="str">- [ ] 進捗ステータス管理（予定/施工中/完了/中断）</span>
+
+<span class="str">### 3.2 工程管理</span>
+<span class="str">- [ ] ガントチャート形式の工程表示</span>
+<span class="str">- [ ] マイルストーン設定</span>
+
+<span class="str">### 3.3 日報管理</span>
+<span class="str">- [ ] 日報入力（作業内容・人員・天気・特記事項）</span>
+<span class="str">- [ ] PDF出力</span>
+
+<span class="cmt">## 4. 非機能要件</span>
+<span class="str">- レスポンス: 3秒以内</span>
+<span class="str">- 可用性: 99.9%（月次ダウンタイム 43分以内）</span>
+<span class="str">- セキュリティ: HTTPS必須・SQLインジェクション対策</span>
+
+<span class="cmt">## 5. 画面一覧</span>
+<span class="str">- ダッシュボード</span>
+<span class="str">- 工事一覧 / 詳細 / 登録・編集</span>
+<span class="str">- 作業員一覧 / 詳細</span>
+<span class="str">- 日報一覧 / 入力</span>
+<span class="str">- 設定</span>
+<span class="div2">
+<span class="cmt">## 6. API仕様（将来）</span>
+<span class="str">GET  /api/projects        # 工事一覧</span>
+<span class="str">POST /api/projects        # 工事登録</span>
+<span class="str">GET  /api/projects/:id    # 工事詳細</span>
+<span class="str">PUT  /api/projects/:id    # 工事更新</span>
+</span></code><span class="code-label">requirements.md</span></pre>
+
+    <div class="callout">
+      📝 <strong>コツ:</strong> チェックボックス形式（<code>- [ ]</code>）で書くと、実装進捗をそのままGitHubのIssueと連携できます。
+    </div>
+  </section>
+
+  <!-- 5. STRUCTURE -->
+  <section class="section" id="structure">
+    <h2><span class="num">5</span>ディレクトリ構成</h2>
+    <pre><code><span class="prop">construction-mgmt/</span>
+├── <span class="fn">.github/</span>
+│   └── <span class="fn">workflows/</span>
+│       └── <span class="str">deploy.yml</span>        <span class="cmt"># CI/CDパイプライン</span>
+├── <span class="fn">terraform/</span>
+│   ├── <span class="str">main.tf</span>              <span class="cmt"># EC2・VPC・SG定義</span>
+│   ├── <span class="str">variables.tf</span>         <span class="cmt"># 変数定義</span>
+│   ├── <span class="str">outputs.tf</span>           <span class="cmt"># 出力値（IPアドレス等）</span>
+│   └── <span class="str">user_data.sh</span>         <span class="cmt"># EC2起動時のApache自動インストール</span>
+├── <span class="fn">app/</span>
+│   ├── <span class="str">index.php</span>            <span class="cmt"># ダッシュボード</span>
+│   ├── <span class="str">projects.php</span>         <span class="cmt"># 工事一覧</span>
+│   ├── <span class="str">workers.php</span>          <span class="cmt"># 作業員管理</span>
+│   ├── <span class="str">reports.php</span>          <span class="cmt"># 日報管理</span>
+│   └── <span class="str">style.css</span>            <span class="cmt"># スタイル</span>
+├── <span class="fn">requirements/</span>
+│   └── <span class="str">requirements.md</span>      <span class="cmt"># 要件定義</span>
+├── <span class="str">guide.html</span>               <span class="cmt"># このファイル（解説）</span>
+└── <span class="str">README.md</span>
+    </code></pre>
+  </section>
+
+  <!-- 6. TERRAFORM -->
+  <section class="section" id="terraform">
+    <h2><span class="num">6</span>Terraform — インフラをコードで管理</h2>
+    <p>Terraformを使うとAWSリソースをコードとして管理でき、<strong>削除・再構築が何度でも同じ状態で再現</strong>できます。</p>
+
+    <h3>main.tf — EC2 + VPC + Security Group</h3>
+    <pre><code><span class="cmt"># terraform/main.tf</span>
+
+<span class="kw">terraform</span> {
+  <span class="prop">required_providers</span> {
+    <span class="fn">aws</span> = {
+      <span class="prop">source</span>  = <span class="str">"hashicorp/aws"</span>
+      <span class="prop">version</span> = <span class="str">"~> 5.0"</span>
+    }
+  }
+  <span class="cmt"># Stateファイルをs3で管理（チーム開発に必須）</span>
+  <span class="prop">backend</span> <span class="str">"s3"</span> {
+    <span class="prop">bucket</span> = <span class="str">"construction-mgmt-tfstate"</span>
+    <span class="prop">key</span>    = <span class="str">"prod/terraform.tfstate"</span>
+    <span class="prop">region</span> = <span class="str">"ap-northeast-1"</span>
+  }
+}
+
+<span class="kw">provider</span> <span class="str">"aws"</span> {
+  <span class="prop">region</span> = <span class="var">var</span>.aws_region
+}
+
+<span class="cmt"># --- VPC ---</span>
+<span class="kw">resource</span> <span class="str">"aws_vpc"</span> <span class="str">"main"</span> {
+  <span class="prop">cidr_block</span>           = <span class="str">"10.0.0.0/16"</span>
+  <span class="prop">enable_dns_hostnames</span> = <span class="kw">true</span>
+  <span class="prop">tags</span> = { <span class="prop">Name</span> = <span class="str">"construction-mgmt-vpc"</span> }
+}
+
+<span class="kw">resource</span> <span class="str">"aws_subnet"</span> <span class="str">"public"</span> {
+  <span class="prop">vpc_id</span>                  = <span class="fn">aws_vpc.main.id</span>
+  <span class="prop">cidr_block</span>              = <span class="str">"10.0.1.0/24"</span>
+  <span class="prop">map_public_ip_on_launch</span> = <span class="kw">true</span>
+}
+
+<span class="cmt"># --- Security Group ---</span>
+<span class="kw">resource</span> <span class="str">"aws_security_group"</span> <span class="str">"web"</span> {
+  <span class="prop">name</span>   = <span class="str">"construction-mgmt-sg"</span>
+  <span class="prop">vpc_id</span> = <span class="fn">aws_vpc.main.id</span>
+
+  <span class="prop">ingress</span> { <span class="prop">from_port</span>=<span class="num2">80</span>  <span class="prop">to_port</span>=<span class="num2">80</span>  <span class="prop">protocol</span>=<span class="str">"tcp"</span> <span class="prop">cidr_blocks</span>=[<span class="str">"0.0.0.0/0"</span>] }
+  <span class="prop">ingress</span> { <span class="prop">from_port</span>=<span class="num2">443</span> <span class="prop">to_port</span>=<span class="num2">443</span> <span class="prop">protocol</span>=<span class="str">"tcp"</span> <span class="prop">cidr_blocks</span>=[<span class="str">"0.0.0.0/0"</span>] }
+  <span class="prop">ingress</span> { <span class="prop">from_port</span>=<span class="num2">22</span>  <span class="prop">to_port</span>=<span class="num2">22</span>  <span class="prop">protocol</span>=<span class="str">"tcp"</span> <span class="prop">cidr_blocks</span>=[<span class="var">var</span>.my_ip] }
+  <span class="prop">egress</span>  { <span class="prop">from_port</span>=<span class="num2">0</span>   <span class="prop">to_port</span>=<span class="num2">0</span>   <span class="prop">protocol</span>=<span class="str">"-1"</span>  <span class="prop">cidr_blocks</span>=[<span class="str">"0.0.0.0/0"</span>] }
+}
+
+<span class="cmt"># --- EC2 Instance ---</span>
+<span class="kw">resource</span> <span class="str">"aws_instance"</span> <span class="str">"web"</span> {
+  <span class="prop">ami</span>                    = <span class="fn">data.aws_ami.al2023.id</span>
+  <span class="prop">instance_type</span>          = <span class="var">var</span>.instance_type
+  <span class="prop">subnet_id</span>              = <span class="fn">aws_subnet.public.id</span>
+  <span class="prop">vpc_security_group_ids</span> = [<span class="fn">aws_security_group.web.id</span>]
+  <span class="prop">key_name</span>               = <span class="var">var</span>.key_name
+  <span class="prop">user_data</span>              = <span class="fn">file</span>(<span class="str">"user_data.sh"</span>)
+  <span class="prop">tags</span> = { <span class="prop">Name</span> = <span class="str">"construction-mgmt-web"</span> }
+}
+
+<span class="cmt"># 最新のAmazon Linux 2023 AMIを自動取得</span>
+<span class="kw">data</span> <span class="str">"aws_ami"</span> <span class="str">"al2023"</span> {
+  <span class="prop">most_recent</span> = <span class="kw">true</span>
+  <span class="prop">owners</span>      = [<span class="str">"amazon"</span>]
+  <span class="prop">filter</span> { <span class="prop">name</span>=<span class="str">"name"</span>   <span class="prop">values</span>=[<span class="str">"al2023-ami-*-x86_64"</span>] }
+  <span class="prop">filter</span> { <span class="prop">name</span>=<span class="str">"state"</span>  <span class="prop">values</span>=[<span class="str">"available"</span>] }
+}</code><span class="code-label">main.tf</span></pre>
+
+    <h3>user_data.sh — Apacheを自動インストール</h3>
+    <pre><code><span class="cmt">#!/bin/bash
+# terraform/user_data.sh
+# EC2起動時に1回だけ実行される初期化スクリプト</span>
+
+<span class="prop">set</span> -e
+
+<span class="cmt"># パッケージ更新 & Apache + PHP インストール</span>
+<span class="fn">dnf</span> update -y
+<span class="fn">dnf</span> install -y httpd php php-mysqlnd php-json php-mbstring
+
+<span class="cmt"># Apache 起動・自動起動設定</span>
+<span class="fn">systemctl</span> enable --now httpd
+
+<span class="cmt"># DocumentRoot の権限設定</span>
+<span class="fn">chown</span> -R apache:apache /var/www/html
+<span class="fn">chmod</span> -R 755 /var/www/html
+
+<span class="cmt"># mod_rewrite 有効化 (.htaccess 対応)</span>
+<span class="fn">sed</span> -i 's/AllowOverride None/AllowOverride All/' /etc/httpd/conf/httpd.conf
+<span class="fn">systemctl</span> restart httpd
+
+<span class="cmt"># MySQL クライアント</span>
+<span class="fn">dnf</span> install -y mariadb105</code><span class="code-label">user_data.sh</span></pre>
+
+    <h3>Terraformコマンドの流れ</h3>
+    <div class="flow">
+      <div class="flow-box">terraform init<br><small>プロバイダDL</small></div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-box">terraform plan<br><small>差分確認</small></div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-box">terraform apply<br><small>AWSに反映</small></div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-box">terraform destroy<br><small>全削除（任意）</small></div>
+    </div>
+  </section>
+
+  <!-- 7. APACHE -->
+  <section class="section" id="apache">
+    <h2><span class="num">7</span>Apache設定</h2>
+    <h3>VirtualHost設定</h3>
+    <pre><code><span class="cmt"># /etc/httpd/conf.d/construction.conf</span>
+
+<span class="kw">&lt;VirtualHost</span> <span class="str">*:80</span><span class="kw">&gt;</span>
+  <span class="prop">ServerName</span>    <span class="str">construction.example.com</span>
+  <span class="prop">DocumentRoot</span>  <span class="str">/var/www/html/construction-mgmt/app</span>
+
+  <span class="kw">&lt;Directory</span> <span class="str">/var/www/html/construction-mgmt/app</span><span class="kw">&gt;</span>
+    <span class="prop">Options</span>       -Indexes +FollowSymLinks
+    <span class="prop">AllowOverride</span> All
+    <span class="prop">Require</span>       all granted
+  <span class="kw">&lt;/Directory&gt;</span>
+
+  <span class="prop">ErrorLog</span>  <span class="str">/var/log/httpd/construction-error.log</span>
+  <span class="prop">CustomLog</span> <span class="str">/var/log/httpd/construction-access.log</span> combined
+<span class="kw">&lt;/VirtualHost&gt;</span></code><span class="code-label">construction.conf</span></pre>
+
+    <div class="callout warn">
+      ⚠ <strong>本番環境では必ずHTTPS化してください。</strong> Let's Encrypt + Certbot で無料SSL証明書を取得できます：<br>
+      <code>dnf install certbot python3-certbot-apache &amp;&amp; certbot --apache</code>
+    </div>
+  </section>
+
+  <!-- 8. CI/CD -->
+  <section class="section" id="cicd">
+    <h2><span class="num">8</span>CI/CD — GitHub Actions</h2>
+    <p><code>main</code>ブランチへのpushで自動的に「Terraform → Apacheへデプロイ」が走ります。</p>
+
+    <pre><code><span class="cmt"># .github/workflows/deploy.yml</span>
+<span class="prop">name</span>: <span class="str">Deploy to AWS</span>
+
+<span class="prop">on</span>:
+  <span class="prop">push</span>:
+    <span class="prop">branches</span>: [<span class="str">main</span>]
+
+<span class="prop">jobs</span>:
+  <span class="cmt"># ─── Job 1: Terraform でインフラを管理 ───</span>
+  <span class="prop">terraform</span>:
+    <span class="prop">runs-on</span>: <span class="str">ubuntu-latest</span>
+    <span class="prop">steps</span>:
+      - <span class="prop">uses</span>: <span class="str">actions/checkout@v4</span>
+
+      - <span class="prop">name</span>: <span class="str">Setup Terraform</span>
+        <span class="prop">uses</span>: <span class="str">hashicorp/setup-terraform@v3</span>
+
+      - <span class="prop">name</span>: <span class="str">Terraform Init</span>
+        <span class="prop">run</span>: <span class="str">terraform -chdir=terraform init</span>
+        <span class="prop">env</span>:
+          <span class="prop">AWS_ACCESS_KEY_ID</span>:     <span class="var">${{ secrets.AWS_ACCESS_KEY_ID }}</span>
+          <span class="prop">AWS_SECRET_ACCESS_KEY</span>: <span class="var">${{ secrets.AWS_SECRET_ACCESS_KEY }}</span>
+
+      - <span class="prop">name</span>: <span class="str">Terraform Plan</span>
+        <span class="prop">run</span>: <span class="str">terraform -chdir=terraform plan -out=tfplan</span>
+        <span class="prop">env</span>:
+          <span class="prop">AWS_ACCESS_KEY_ID</span>:     <span class="var">${{ secrets.AWS_ACCESS_KEY_ID }}</span>
+          <span class="prop">AWS_SECRET_ACCESS_KEY</span>: <span class="var">${{ secrets.AWS_SECRET_ACCESS_KEY }}</span>
+
+      - <span class="prop">name</span>: <span class="str">Terraform Apply</span>
+        <span class="prop">run</span>: <span class="str">terraform -chdir=terraform apply -auto-approve tfplan</span>
+        <span class="prop">env</span>:
+          <span class="prop">AWS_ACCESS_KEY_ID</span>:     <span class="var">${{ secrets.AWS_ACCESS_KEY_ID }}</span>
+          <span class="prop">AWS_SECRET_ACCESS_KEY</span>: <span class="var">${{ secrets.AWS_SECRET_ACCESS_KEY }}</span>
+
+  <span class="cmt"># ─── Job 2: アプリをEC2にデプロイ ───</span>
+  <span class="prop">deploy</span>:
+    <span class="prop">needs</span>: terraform  <span class="cmt"># Terraform完了後に実行</span>
+    <span class="prop">runs-on</span>: <span class="str">ubuntu-latest</span>
+    <span class="prop">steps</span>:
+      - <span class="prop">uses</span>: <span class="str">actions/checkout@v4</span>
+
+      - <span class="prop">name</span>: <span class="str">Deploy app via rsync</span>
+        <span class="prop">uses</span>: <span class="str">burnett01/rsync-deployments@6.0.0</span>
+        <span class="prop">with</span>:
+          <span class="prop">switches</span>: <span class="str">-avz --delete</span>
+          <span class="prop">path</span>:     <span class="str">app/</span>
+          <span class="prop">remote_path</span>: <span class="str">/var/www/html/construction-mgmt/app/</span>
+          <span class="prop">remote_host</span>: <span class="var">${{ secrets.EC2_HOST }}</span>
+          <span class="prop">remote_user</span>: <span class="str">ec2-user</span>
+          <span class="prop">remote_key</span>:  <span class="var">${{ secrets.EC2_SSH_KEY }}</span></code><span class="code-label">deploy.yml</span></pre>
+
+    <h3>GitHub Secrets の設定</h3>
+    <table>
+      <tr><th>Secret名</th><th>値</th></tr>
+      <tr><td><code>AWS_ACCESS_KEY_ID</code></td><td>IAMユーザーのアクセスキー</td></tr>
+      <tr><td><code>AWS_SECRET_ACCESS_KEY</code></td><td>IAMユーザーのシークレットキー</td></tr>
+      <tr><td><code>EC2_HOST</code></td><td>EC2のパブリックIPアドレス</td></tr>
+      <tr><td><code>EC2_SSH_KEY</code></td><td>EC2接続用の秘密鍵（pem内容をそのまま）</td></tr>
+    </table>
+    <p style="font-size:.85rem;color:var(--muted);margin-top:.5rem">Settings → Secrets and variables → Actions → New repository secret から登録</p>
+  </section>
+
+  <!-- 9. AUTOMATION -->
+  <section class="section" id="automation">
+    <h2><span class="num">9</span>保守の自動化</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-body">
+          <h4>ログ監視 + アラート</h4>
+          <p>CloudWatch Logsにhttpdログを送信し、5xxエラーが閾値を超えたらSNS→メール通知。Terraformで設定。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-body">
+          <h4>自動バックアップ</h4>
+          <p>RDS自動スナップショット（毎日）+ S3へのDBダンプをCronで実行。保持期間7日。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-body">
+          <h4>OSパッチ自動適用</h4>
+          <p>AWS Systems Manager Patch Manager を使い、毎週日曜深夜に自動パッチ適用。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-body">
+          <h4>依存ライブラリ自動更新</h4>
+          <p>GitHub Dependabotを有効化。脆弱性のある依存パッケージのPRを自動作成。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-body">
+          <h4>コスト監視</h4>
+          <p>AWS Budgetsで月額上限を設定。超過・予測超過で自動アラート。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10. APP -->
+  <section class="section" id="app">
+    <h2><span class="num">10</span>工事管理システム — 機能一覧</h2>
+    <table>
+      <tr><th>画面</th><th>主な機能</th><th>ファイル</th></tr>
+      <tr><td>ダッシュボード</td><td>工事数・進行中案件・今日の作業員数のサマリ</td><td>index.php</td></tr>
+      <tr><td>工事一覧</td><td>案件一覧・ステータスフィルタ・検索</td><td>projects.php</td></tr>
+      <tr><td>工事詳細・編集</td><td>案件名・場所・工期・担当者・メモ</td><td>project_edit.php</td></tr>
+      <tr><td>作業員管理</td><td>作業員一覧・資格管理・稼働状況</td><td>workers.php</td></tr>
+      <tr><td>日報管理</td><td>日報入力・一覧・PDF出力</td><td>reports.php</td></tr>
+      <tr><td>設定</td><td>ユーザー管理・ロール設定</td><td>settings.php</td></tr>
+    </table>
+  </section>
+
+  <!-- 11. NEXT STEPS -->
+  <section class="section" id="nextsteps">
+    <h2><span class="num">11</span>次のステップ</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-body">
+          <h4>AWSアカウント + IAMユーザー作成</h4>
+          <p>Terraform用にEC2/VPC/S3の権限を持つIAMユーザーを作成し、アクセスキーを発行。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-body">
+          <h4>S3バケット作成（Terraform State用）</h4>
+          <p><code>construction-mgmt-tfstate</code>バケットを手動で事前作成。バージョニングを有効化。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-body">
+          <h4>EC2キーペア作成</h4>
+          <p>AWS ConsoleでキーペアをSSH接続用に作成。pem ファイルをGitHub Secretsに登録。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-body">
+          <h4>GitHub Secrets 登録</h4>
+          <p>AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY / EC2_SSH_KEY を登録。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-body">
+          <h4>mainブランチへpush → 自動デプロイ確認</h4>
+          <p>git push後にGitHub ActionsのWorkflowタブでログを確認。EC2のIPにアクセスして動作確認。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout tip" style="margin-top:2rem">
+      🚀 <strong>Claude Code + MCP があれば:</strong> 要件を伝えるだけでTerraformコードの修正・GitHub Secretsの案内・デプロイ状況確認まで会話の中で完結できます。
+    </div>
+  </section>
+
+  <footer style="margin-top:4rem;padding-top:2rem;border-top:1px solid var(--border);color:var(--muted);font-size:.83rem">
+    Built with GitHub MCP + Claude Code &nbsp;·&nbsp; <a href="https://github.com/yasuki-tech/construction-mgmt" style="color:var(--accent)">github.com/yasuki-tech/construction-mgmt</a>
+  </footer>
+
+</main>
+</body>
+</html>
