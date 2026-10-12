@@ -1,51 +1,62 @@
-# .github/workflows/deploy.yml
 name: Deploy to AWS
 
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
-  # ─── Job 1: Terraform でインフラを管理 ───
   terraform:
+    name: Terraform
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.0"
 
       - name: Terraform Init
-        run: terraform -chdir=terraform init
+        run: terraform init
         env:
           AWS_ACCESS_KEY_ID:     ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       - name: Terraform Plan
-        run: terraform -chdir=terraform plan -out=tfplan
+        run: terraform plan -var="key_name=${{ secrets.EC2_KEY_NAME }}" -var="my_ip=${{ secrets.MY_IP }}"
         env:
           AWS_ACCESS_KEY_ID:     ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       - name: Terraform Apply
-        run: terraform -chdir=terraform apply -auto-approve tfplan
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform apply -auto-approve -var="key_name=${{ secrets.EC2_KEY_NAME }}" -var="my_ip=${{ secrets.MY_IP }}"
         env:
           AWS_ACCESS_KEY_ID:     ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-  # ─── Job 2: アプリをEC2にデプロイ ───
   deploy:
-    needs: terraform  # Terraform完了後に実行
+    name: Deploy App
+    needs: terraform
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
       - uses: actions/checkout@v4
 
-      - name: Deploy app via rsync
-        uses: burnett01/rsync-deployments@6.0.0
-        with:
-          switches: -avz --delete
-          path:     app/
-          remote_path: /var/www/html/construction-mgmt/app/
-          remote_host: ${{ secrets.EC2_HOST }}
-          remote_user: ec2-user
-          remote_key:  ${{ secrets.EC2_SSH_KEY }}
+      - name: Deploy via rsync
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          rsync -avz --delete -e "ssh -i ~/.ssh/id_rsa" \
+            app/ ec2-user@${{ secrets.EC2_HOST }}:/var/www/html/construction-mgmt/app/
+          ssh -i ~/.ssh/id_rsa ec2-user@${{ secrets.EC2_HOST }} \
+            "sudo chown -R apache:apache /var/www/html && sudo systemctl reload httpd"
+
+      - name: Health check
+        run: curl -f http://${{ secrets.EC2_HOST }}/ || exit 1
